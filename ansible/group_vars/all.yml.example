@@ -1,0 +1,9 @@
+db_host: "your-rds-endpoint.rds.amazonaws.com"
+db_port: 5432
+db_name: "appdb"
+db_user: "appadmin"
+db_password: "change-me"
+
+s3_bucket_name: "your-s3-bucket-name"
+sns_topic_arn: "your-sns-topic-arn"
+aws_region: "us-east-1"

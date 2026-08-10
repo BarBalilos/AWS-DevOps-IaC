@@ -1,0 +1,47 @@
+---
+- name: Persist IP forwarding setting
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-nat-forwarding.conf
+    content: "net.ipv4.ip_forward = 1\n"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload sysctl
+
+- name: Apply IP forwarding immediately
+  ansible.builtin.command: sysctl -w net.ipv4.ip_forward=1
+  changed_when: false
+
+- name: Ensure iptables is installed
+  ansible.builtin.dnf:
+    name: iptables
+    state: present
+
+- name: Add MASQUERADE rule for outbound NAT
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: "{{ ansible_default_ipv4.interface }}"
+    jump: MASQUERADE
+    comment: "NAT for private subnets"
+
+- name: Create systemd unit to reapply MASQUERADE rule on boot
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/nat-masquerade.service
+    content: |
+      [Unit]
+      Description=Reapply NAT MASQUERADE rule for private subnets
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/sh -c '/usr/sbin/iptables -t nat -C POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE || /usr/sbin/iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE'
+      RemainAfterExit=true
+
+      [Install]
+      WantedBy=multi-user.target
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd and enable nat service

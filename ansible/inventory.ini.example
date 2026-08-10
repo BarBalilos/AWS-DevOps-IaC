@@ -1,0 +1,18 @@
+[frontend]
+frontend ansible_host=<FRONTEND_PUBLIC_IP>
+
+[backend]
+backend ansible_host=<BACKEND_PRIVATE_IP>
+
+[worker]
+worker ansible_host=<WORKER_PRIVATE_IP>
+
+[backend:vars]
+ansible_ssh_common_args='-o ProxyJump=ec2-user@<FRONTEND_PUBLIC_IP>'
+
+[worker:vars]
+ansible_ssh_common_args='-o ProxyJump=ec2-user@<FRONTEND_PUBLIC_IP>'
+
+[all:vars]
+ansible_user=ec2-user
+ansible_ssh_private_key_file=~/.ssh/your-key.pem

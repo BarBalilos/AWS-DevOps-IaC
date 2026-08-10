@@ -1,0 +1,18 @@
+[Unit]
+Description=Backend Flask service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/app/backend
+Environment=DB_HOST={{ db_host }}
+Environment=DB_PORT={{ db_port }}
+Environment=DB_NAME={{ db_name }}
+Environment=DB_USER={{ db_user }}
+Environment=DB_PASSWORD={{ db_password }}
+ExecStart=/opt/app/backend/venv/bin/python /opt/app/backend/app.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

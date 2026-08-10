@@ -1,0 +1,8 @@
+aws_region          = "us-east-1"
+project_name        = "aws-devops"
+key_pair_name       = "your-ec2-key-pair-name"
+ssh_allowed_cidr    = "YOUR_IP/32"
+db_name             = "appdb"
+db_username         = "appadmin"
+db_password         = "change-me-and-never-commit-this"
+notification_email  = "you@example.com"

@@ -1,0 +1,57 @@
+---
+- name: Install Python3 and pip
+  ansible.builtin.dnf:
+    name:
+      - python3
+      - python3-pip
+    state: present
+
+- name: Create worker app directory
+  ansible.builtin.file:
+    path: /opt/app/worker
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0755"
+
+- name: Copy worker application code
+  ansible.builtin.copy:
+    src: worker.py
+    dest: /opt/app/worker/worker.py
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
+- name: Copy worker requirements.txt
+  ansible.builtin.copy:
+    src: requirements.txt
+    dest: /opt/app/worker/requirements.txt
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
+- name: Create Python virtual environment
+  ansible.builtin.command: python3 -m venv /opt/app/worker/venv
+  args:
+    creates: /opt/app/worker/venv/bin/activate
+
+- name: Install worker dependencies into venv
+  ansible.builtin.pip:
+    requirements: /opt/app/worker/requirements.txt
+    virtualenv: /opt/app/worker/venv
+
+- name: Deploy systemd service for worker
+  ansible.builtin.template:
+    src: worker.service.j2
+    dest: /etc/systemd/system/worker.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart worker
+
+- name: Ensure worker service is enabled and started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: worker
+    enabled: true
+    state: started

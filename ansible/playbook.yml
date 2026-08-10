@@ -1,0 +1,30 @@
+---
+- name: Configure frontend as NAT for private subnets
+  hosts: frontend
+  become: true
+  roles:
+    - nat
+
+- name: Common setup on all servers
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure nginx frontend / reverse proxy
+  hosts: frontend
+  become: true
+  roles:
+    - nginx
+
+- name: Deploy backend service
+  hosts: backend
+  become: true
+  roles:
+    - backend
+
+- name: Deploy worker service
+  hosts: worker
+  become: true
+  roles:
+    - worker

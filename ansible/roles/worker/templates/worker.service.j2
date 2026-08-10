@@ -1,0 +1,16 @@
+[Unit]
+Description=Worker Flask service (S3 + SNS)
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/app/worker
+Environment=AWS_REGION={{ aws_region }}
+Environment=S3_BUCKET={{ s3_bucket_name }}
+Environment=SNS_TOPIC_ARN={{ sns_topic_arn }}
+ExecStart=/opt/app/worker/venv/bin/python /opt/app/worker/worker.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

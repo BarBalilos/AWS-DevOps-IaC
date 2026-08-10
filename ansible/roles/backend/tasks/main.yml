@@ -1,0 +1,57 @@
+---
+- name: Install Python3 and pip
+  ansible.builtin.dnf:
+    name:
+      - python3
+      - python3-pip
+    state: present
+
+- name: Create backend app directory
+  ansible.builtin.file:
+    path: /opt/app/backend
+    state: directory
+    owner: ec2-user
+    group: ec2-user
+    mode: "0755"
+
+- name: Copy backend application code
+  ansible.builtin.copy:
+    src: app.py
+    dest: /opt/app/backend/app.py
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
+- name: Copy backend requirements.txt
+  ansible.builtin.copy:
+    src: requirements.txt
+    dest: /opt/app/backend/requirements.txt
+    owner: ec2-user
+    group: ec2-user
+    mode: "0644"
+
+- name: Create Python virtual environment
+  ansible.builtin.command: python3 -m venv /opt/app/backend/venv
+  args:
+    creates: /opt/app/backend/venv/bin/activate
+
+- name: Install backend dependencies into venv
+  ansible.builtin.pip:
+    requirements: /opt/app/backend/requirements.txt
+    virtualenv: /opt/app/backend/venv
+
+- name: Deploy systemd service for backend
+  ansible.builtin.template:
+    src: backend.service.j2
+    dest: /etc/systemd/system/backend.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart backend
+
+- name: Ensure backend service is enabled and started
+  ansible.builtin.systemd:
+    daemon_reload: true
+    name: backend
+    enabled: true
+    state: started

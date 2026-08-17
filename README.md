@@ -3,29 +3,30 @@
 ## Architecture
 
 A simple 3-tier application deployed on AWS, provisioned entirely with Terraform and configured entirely with Ansible (no manual console setup).
-                     Internet
-                        |
-                 [Internet Gateway]
-                        |
-                 Public Subnet (10.0.1.0/24)
-                        |
-              ┌─────────────────────┐
-              │  frontend (nginx)   │  <- public IP, only server exposed to the internet
-              │  also acts as NAT   │     for the private subnets (see "NAT instance" below)
-              └─────────────────────┘
-                        |
-          (VPC-internal routing only)
-             /                      \
 
-Private Subnet A (10.0.2.0/24) Private Subnet B (10.0.3.0/24)
-┌───────────────────┐ ┌───────────────────┐
-│ backend (Flask) │ │ worker (Flask) │
-│ port 5000, /api/ │ │ port 5001, /upload│
-└───────────────────┘ └───────────────────┘
-| |
-v v
-[RDS PostgreSQL] [S3 bucket] + [SNS topic]
-
+```text
+                          Internet
+                             |
+                      [Internet Gateway]
+                             |
+                   Public Subnet (10.0.1.0/24)
+                             |
+                  ┌───────────────────────┐
+                  │   frontend (nginx)    │  <- public IP, only server exposed to internet
+                  │   also acts as NAT    │     for the private subnets (see "NAT instance" below)
+                  └───────────────────────┘
+                             |
+                (VPC-internal routing only)
+                    /                    \
+   Private Subnet A (10.0.2.0/24)   Private Subnet B (10.0.3.0/24)
+        ┌───────────────────┐         ┌───────────────────┐
+        │  backend (Flask)  │         │  worker (Flask)   │
+        │  port 5000, /api/ │         │ port 5001, /upload │
+        └───────────────────┘         └───────────────────┘
+                 |                             |
+                 v                             v
+          [RDS PostgreSQL]           [S3 bucket] + [SNS topic]
+```
 
 - **frontend**: nginx reverse proxy. Routes `/api/*` to backend, `/upload` to worker, everything else returns a static message. Public IP, only server open to the internet (port 80 + SSH from admin IP).
 - **backend**: Flask app storing/reading `records` in Postgres (RDS). Private subnet, no direct internet access.
@@ -107,6 +108,7 @@ curl http://<frontend_public_ip>/api/records      # [] or existing records
 curl -X POST -F "file=@somefile.txt" http://<frontend_public_ip>/upload   # {"status":"uploaded","key":"somefile.txt"}
 aws s3 ls s3://<s3_bucket_name>/                  # confirms the file landed in S3
 ```
+
 An email notification should also arrive at the address subscribed to the SNS topic on every successful upload.
 
 ## Stopping/starting the environment
